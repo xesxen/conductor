@@ -24,6 +24,7 @@ import com.netflix.conductor.common.metadata.tasks.Task.Status;
 import com.netflix.conductor.common.metadata.workflow.WorkflowTask;
 import com.netflix.conductor.common.metadata.workflow.WorkflowTask.Type;
 import com.netflix.conductor.common.run.Workflow;
+import com.netflix.conductor.common.utils.ExternalPayloadStorage;
 import com.netflix.conductor.core.execution.mapper.DecisionTaskMapper;
 import com.netflix.conductor.core.execution.mapper.DynamicTaskMapper;
 import com.netflix.conductor.core.execution.mapper.EventTaskMapper;
@@ -78,6 +79,7 @@ public class TestWorkflowExecutor {
         MetadataDAO metadataDAO = mock(MetadataDAO.class);
         executionDAO = mock(ExecutionDAO.class);
         queueDAO = mock(QueueDAO.class);
+        ExternalPayloadStorage externalPayloadStorage = mock(ExternalPayloadStorage.class);
         ObjectMapper objectMapper = new ObjectMapper();
         ParametersUtils parametersUtils = new ParametersUtils();
         Map<String, TaskMapper> taskMappers = new HashMap<>();
@@ -91,12 +93,12 @@ public class TestWorkflowExecutor {
         taskMappers.put("SUB_WORKFLOW", new SubWorkflowTaskMapper(parametersUtils, metadataDAO));
         taskMappers.put("EVENT", new EventTaskMapper(parametersUtils));
         taskMappers.put("WAIT", new WaitTaskMapper(parametersUtils));
-        DeciderService deciderService = new DeciderService(metadataDAO, queueDAO, taskMappers);
-        workflowExecutor = new WorkflowExecutor(deciderService, metadataDAO, executionDAO, queueDAO, config);
+        DeciderService deciderService = new DeciderService(metadataDAO, parametersUtils, queueDAO, externalPayloadStorage, taskMappers);
+        workflowExecutor = new WorkflowExecutor(deciderService, metadataDAO, executionDAO, queueDAO, parametersUtils, config);
     }
 
     @Test
-    public void testScheduleTask() throws Exception {
+    public void testScheduleTask() {
 
         AtomicBoolean httpTaskExecuted = new AtomicBoolean(false);
         AtomicBoolean http2TaskExecuted = new AtomicBoolean(false);
@@ -114,7 +116,6 @@ public class TestWorkflowExecutor {
                 task.setStatus(Status.COMPLETED);
                 super.start(workflow, task, executor);
             }
-
         };
 
         new WorkflowSystemTask("HTTP2") {
@@ -125,7 +126,6 @@ public class TestWorkflowExecutor {
                 task.setStatus(Status.COMPLETED);
                 super.start(workflow, task, executor);
             }
-
         };
 
         Workflow workflow = new Workflow();
@@ -220,7 +220,7 @@ public class TestWorkflowExecutor {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testCompleteWorkflow() throws Exception {
+    public void testCompleteWorkflow() {
         Workflow workflow = new Workflow();
         workflow.setWorkflowId("1");
         workflow.setWorkflowType("test");
