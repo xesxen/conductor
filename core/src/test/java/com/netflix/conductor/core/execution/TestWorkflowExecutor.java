@@ -24,7 +24,6 @@ import com.netflix.conductor.common.metadata.tasks.Task.Status;
 import com.netflix.conductor.common.metadata.workflow.WorkflowTask;
 import com.netflix.conductor.common.metadata.workflow.WorkflowTask.Type;
 import com.netflix.conductor.common.run.Workflow;
-import com.netflix.conductor.common.utils.ExternalPayloadStorage;
 import com.netflix.conductor.core.execution.mapper.DecisionTaskMapper;
 import com.netflix.conductor.core.execution.mapper.DynamicTaskMapper;
 import com.netflix.conductor.core.execution.mapper.EventTaskMapper;
@@ -38,6 +37,7 @@ import com.netflix.conductor.core.execution.mapper.UserDefinedTaskMapper;
 import com.netflix.conductor.core.execution.mapper.WaitTaskMapper;
 import com.netflix.conductor.core.execution.tasks.Wait;
 import com.netflix.conductor.core.execution.tasks.WorkflowSystemTask;
+import com.netflix.conductor.core.utils.ExternalPayloadStorageUtils;
 import com.netflix.conductor.core.utils.IDGenerator;
 import com.netflix.conductor.dao.ExecutionDAO;
 import com.netflix.conductor.dao.MetadataDAO;
@@ -79,7 +79,7 @@ public class TestWorkflowExecutor {
         MetadataDAO metadataDAO = mock(MetadataDAO.class);
         executionDAO = mock(ExecutionDAO.class);
         queueDAO = mock(QueueDAO.class);
-        ExternalPayloadStorage externalPayloadStorage = mock(ExternalPayloadStorage.class);
+        ExternalPayloadStorageUtils externalPayloadStorageUtils = mock(ExternalPayloadStorageUtils.class);
         ObjectMapper objectMapper = new ObjectMapper();
         ParametersUtils parametersUtils = new ParametersUtils();
         Map<String, TaskMapper> taskMappers = new HashMap<>();
@@ -93,7 +93,7 @@ public class TestWorkflowExecutor {
         taskMappers.put("SUB_WORKFLOW", new SubWorkflowTaskMapper(parametersUtils, metadataDAO));
         taskMappers.put("EVENT", new EventTaskMapper(parametersUtils));
         taskMappers.put("WAIT", new WaitTaskMapper(parametersUtils));
-        DeciderService deciderService = new DeciderService(metadataDAO, parametersUtils, queueDAO, externalPayloadStorage, taskMappers);
+        DeciderService deciderService = new DeciderService(metadataDAO, parametersUtils, queueDAO, externalPayloadStorageUtils, taskMappers);
         workflowExecutor = new WorkflowExecutor(deciderService, metadataDAO, executionDAO, queueDAO, parametersUtils, config);
     }
 
