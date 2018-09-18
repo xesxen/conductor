@@ -277,6 +277,8 @@ public class EventHandler {
 		
 		private Map<String, Object> input = new HashMap<>();
 
+		private Map<String, String> taskToDomain = new HashMap<>();
+
 		/**
 		 * @return the name
 		 */
@@ -337,8 +339,20 @@ public class EventHandler {
 		public void setInput(Map<String, Object> input) {
 			this.input = input;
 		}
-		
-		
+
+		/**
+		 * @return the taskToDomain
+		 */
+		public Map<String, String> getTaskToDomain() {
+			return taskToDomain;
+		}
+
+		/**
+		 * @param taskToDomain the taskToDomain to set
+		 */
+		public void setTaskToDomain(Map<String, String> taskToDomain) {
+			this.taskToDomain = taskToDomain;
+		}
 	}
 	
 }
