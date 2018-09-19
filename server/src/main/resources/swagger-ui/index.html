@@ -37,8 +37,12 @@
           var url = window.location.search.match(/url=([^&]+)/); //http://127.0.0.1:8080/?url=127.0.0.1:8080
           if (url && url.length > 1) {
               url = decodeURIComponent(url[1]);
+
+              if (!url.includes('://')) {
+                  url = `http://${url}`;
+              }
           } else {
-              url = "localhost:8080";
+              url = `${window.location.protocol}//${window.location.host}`;
           }
 
           hljs.configure({
@@ -50,7 +54,7 @@
               window.SwaggerTranslator.translate();
           }
           window.swaggerUi = new SwaggerUi({
-              url: "http://" + url + "/api/swagger.json",
+              url: url + "/api/swagger.json",
               dom_id: "swagger-ui-container",
               supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
               onComplete: function(swaggerApi, swaggerUi){
