@@ -37,12 +37,8 @@
           var url = window.location.search.match(/url=([^&]+)/); //http://127.0.0.1:8080/?url=127.0.0.1:8080
           if (url && url.length > 1) {
               url = decodeURIComponent(url[1]);
-
-              if (!url.includes('://')) {
-                  url = `http://${url}`;
-              }
           } else {
-              url = `${window.location.protocol}//${window.location.host}`;
+              url = window.location.host;
           }
 
           hljs.configure({
