@@ -48,12 +48,9 @@ import redis.clients.jedis.JedisSentinelPool;
 import javax.servlet.DispatcherType;
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Viren
@@ -136,7 +133,7 @@ public class ConductorServer {
 		case redis_sentinel:
 			Set<String> hosts = dynoHosts.stream().map(dynoHost -> dynoHost.getHostName() + ":" + dynoHost.getPort()).collect(Collectors.toSet());
 			JedisSentinelPool p = new JedisSentinelPool(conductorConfig.getProperty("workflow.sentinel.master", null), hosts);
-			hostSupplier = () -> dynoHosts.stream().filter((dynoHost) -> (dynoHost.getHostName() + ":" + dynoHost.getPort()).equals(p.getCurrentHostMaster().toString())).collect(Collectors.toList());
+			hostSupplier = () -> Stream.of(new Host("redis_sentinel", p.getCurrentHostMaster().getHost(), p.getCurrentHostMaster().getPort(), "us-east-1a")).collect(Collectors.toList());
 
 		case redis:
 		case dynomite:
