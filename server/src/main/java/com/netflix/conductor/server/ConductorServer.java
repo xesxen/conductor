@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisCommands;
+import redis.clients.jedis.JedisSentinelPool;
 
 import javax.servlet.DispatcherType;
 import javax.ws.rs.core.MediaType;
@@ -52,6 +53,7 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Viren
@@ -62,7 +64,7 @@ public class ConductorServer {
 	private static Logger logger = LoggerFactory.getLogger(ConductorServer.class);
 	
 	enum DB {
-		redis, dynomite, memory, redis_cluster, mysql
+		redis, dynomite, memory, redis_cluster, mysql, redis_sentinel
 	}
 
 	enum ExternalPayloadStorageType {
@@ -184,6 +186,13 @@ public class ConductorServer {
 			poolConfig.setMaxTotal(1000);
 			jedis = new JedisCluster(new HostAndPort(host.getHostName(), host.getPort()), poolConfig);
 			logger.info("Starting conductor server using redis_cluster " + dynoClusterName);
+			break;
+
+		case redis_sentinel:
+			Set<String> hosts = dynoHosts.stream().map(dynoHost -> dynoHost.getHostName() + ":" + dynoHost.getPort()).collect(Collectors.toSet());
+			JedisSentinelPool p = new JedisSentinelPool(conductorConfig.getProperty("workflow.sentinel.master", null), hosts);
+			jedis = p.getResource();
+			logger.info("Starting conductor server using redis_sentinel " + dynoClusterName);
 			break;
 		}
 		
