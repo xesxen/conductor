@@ -133,7 +133,12 @@ public class ConductorServer {
 		JedisCommands jedis = null;
 
 		switch(database) {
-		case redis:		
+		case redis_sentinel:
+			Set<String> hosts = dynoHosts.stream().map(dynoHost -> dynoHost.getHostName() + ":" + dynoHost.getPort()).collect(Collectors.toSet());
+			JedisSentinelPool p = new JedisSentinelPool(conductorConfig.getProperty("workflow.sentinel.master", null), hosts);
+			hostSupplier = () -> dynoHosts.stream().filter((dynoHost) -> (dynoHost.getHostName() + ":" + dynoHost.getPort()).equals(p.getCurrentHostMaster().toString())).collect(Collectors.toList());
+
+		case redis:
 		case dynomite:
 			ConnectionPoolConfigurationImpl connectionPoolConfiguration = new ConnectionPoolConfigurationImpl(dynoClusterName)
 					.withTokenSupplier(getTokenMapSupplier(dynoHosts))
@@ -186,13 +191,6 @@ public class ConductorServer {
 			poolConfig.setMaxTotal(1000);
 			jedis = new JedisCluster(new HostAndPort(host.getHostName(), host.getPort()), poolConfig);
 			logger.info("Starting conductor server using redis_cluster " + dynoClusterName);
-			break;
-
-		case redis_sentinel:
-			Set<String> hosts = dynoHosts.stream().map(dynoHost -> dynoHost.getHostName() + ":" + dynoHost.getPort()).collect(Collectors.toSet());
-			JedisSentinelPool p = new JedisSentinelPool(conductorConfig.getProperty("workflow.sentinel.master", null), hosts);
-			jedis = p.getResource();
-			logger.info("Starting conductor server using redis_sentinel " + dynoClusterName);
 			break;
 		}
 		
