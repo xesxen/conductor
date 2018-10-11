@@ -91,7 +91,7 @@ public class ConductorServer {
 			System.exit(1);
 		}
 		
-		if(!(database.equals(DB.memory) || database.equals(DB.mysql))) {
+		if(!(database.equals(DB.memory) || database.equals(DB.mysql) || database.equals(DB.redis_sentinel))) {
 			String hosts = conductorConfig.getProperty("workflow.dynomite.cluster.hosts", null);
 			if(hosts == null) {
 				System.err.println("Missing dynomite/redis hosts.  Ensure 'workflow.dynomite.cluster.hosts' has been set in the supplied configuration.");
@@ -99,7 +99,7 @@ public class ConductorServer {
 				System.exit(1);
 			}
 			String[] hostConfigs = hosts.split(";");
-			
+
 			for(String hostConfig : hostConfigs) {
 				String[] hostConfigValues = hostConfig.split(":");
 				String host = hostConfigValues[0];
@@ -108,6 +108,26 @@ public class ConductorServer {
 				Host dynoHost = new Host(host, port, rack, Status.Up);
 				dynoHosts.add(dynoHost);
 			}
+		}else if(database.equals(DB.redis_sentinel)) {
+			String hosts = conductorConfig.getProperty("workflow.dynomite.cluster.hosts", null);
+			if (hosts == null) {
+				System.err.println("Missing dynomite/redis hosts.  Ensure 'workflow.dynomite.cluster.hosts' has been set in the supplied configuration.");
+				logger.error("Missing dynomite/redis hosts.  Ensure 'workflow.dynomite.cluster.hosts' has been set in the supplied configuration.");
+				System.exit(1);
+			}
+			String[] hostConfigs = hosts.split(";");
+			Set<String> sentinelHosts = new HashSet<>();
+
+			for (String hostConfig : hostConfigs) {
+				String[] hostConfigValues = hostConfig.split(":");
+				String host = hostConfigValues[0];
+				int port = Integer.parseInt(hostConfigValues[1]);
+				sentinelHosts.add(host + ":" + port);
+			}
+			JedisSentinelPool p = new JedisSentinelPool(conductorConfig.getProperty("workflow.sentinel.master", null), sentinelHosts);
+
+			Host dynoHost = new Host(p.getCurrentHostMaster().getHost(), p.getCurrentHostMaster().getPort(), conductorConfig.getAvailabilityZone(), Status.Up);
+			dynoHosts.add(dynoHost);
 		}else {
 			//Create a single shard host supplier
 			Host dynoHost = new Host("localhost", 0, conductorConfig.getAvailabilityZone(), Status.Up);
@@ -130,12 +150,8 @@ public class ConductorServer {
 		JedisCommands jedis = null;
 
 		switch(database) {
-		case redis_sentinel:
-			Set<String> hosts = dynoHosts.stream().map(dynoHost -> dynoHost.getHostName() + ":" + dynoHost.getPort()).collect(Collectors.toSet());
-			JedisSentinelPool p = new JedisSentinelPool(conductorConfig.getProperty("workflow.sentinel.master", null), hosts);
-			hostSupplier = () -> Stream.of(new Host("redis_sentinel", p.getCurrentHostMaster().getHost(), p.getCurrentHostMaster().getPort(), "us-east-1a")).collect(Collectors.toList());
-
 		case redis:
+		case redis_sentinel:
 		case dynomite:
 			ConnectionPoolConfigurationImpl connectionPoolConfiguration = new ConnectionPoolConfigurationImpl(dynoClusterName)
 					.withTokenSupplier(getTokenMapSupplier(dynoHosts))
@@ -151,6 +167,8 @@ public class ConductorServer {
 					.withDynomiteClusterName(dynoClusterName)
 					.withCPConfig(connectionPoolConfiguration)
 					.build();
+
+			logger.info(((DynoJedisClient) jedis).getConnPool().getActivePools().stream().map(pool -> pool.getHost().toString()).collect(Collectors.toList()).toString());
 			
 			logger.info("Starting conductor server using dynomite/redis cluster " + dynoClusterName);
 			
