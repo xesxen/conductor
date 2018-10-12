@@ -18,6 +18,9 @@
  */
 package com.netflix.conductor.common.metadata.workflow;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Viren
  *
@@ -28,6 +31,8 @@ public class SubWorkflowParams {
 
     //QQ why is this an object ??
     private Object version;
+
+    private Map<String, String> taskToDomain;
 
     /**
      * @return the name
@@ -57,5 +62,16 @@ public class SubWorkflowParams {
         this.version = version;
     }
 
-
+    /**
+     * @return the taskToDomain
+     */
+    public Map<String, String> getTaskToDomain() {
+        return taskToDomain;
+    }
+    /**
+     * @param taskToDomain the taskToDomain to set
+     */
+    public void setTaskToDomain(Map<String, String> taskToDomain) {
+        this.taskToDomain = taskToDomain;
+    }
 }

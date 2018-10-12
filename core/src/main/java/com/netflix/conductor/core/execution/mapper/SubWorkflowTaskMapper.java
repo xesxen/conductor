@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.swing.text.html.Option;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +67,12 @@ public class SubWorkflowTaskMapper implements TaskMapper {
 
         Integer subWorkflowVersion = getSubWorkflowVersion(resolvedParams, subWorkflowName);
 
+        Map subWorkflowTaskToDomain = null;
+        Object uncheckedTaskToDomain = resolvedParams.get("taskToDomain");
+        if (uncheckedTaskToDomain instanceof Map) {
+            subWorkflowTaskToDomain = (Map) uncheckedTaskToDomain;
+        }
+
         Task subWorkflowTask = new Task();
         subWorkflowTask.setTaskType(SubWorkflow.NAME);
         subWorkflowTask.setTaskDefName(taskToSchedule.getName());
@@ -77,6 +84,7 @@ public class SubWorkflowTaskMapper implements TaskMapper {
         subWorkflowTask.setEndTime(System.currentTimeMillis());
         subWorkflowTask.getInputData().put("subWorkflowName", subWorkflowName);
         subWorkflowTask.getInputData().put("subWorkflowVersion", subWorkflowVersion);
+        subWorkflowTask.getInputData().put("subWorkflowTaskToDomain", subWorkflowTaskToDomain);
         subWorkflowTask.getInputData().put("workflowInput", taskMapperContext.getTaskInput());
         subWorkflowTask.setTaskId(taskId);
         subWorkflowTask.setStatus(Task.Status.SCHEDULED);
@@ -104,6 +112,10 @@ public class SubWorkflowTaskMapper implements TaskMapper {
         Object version = subWorkflowParams.getVersion();
         if (version != null) {
             params.put("version", version.toString());
+        }
+        Map<String, String> taskToDomain = subWorkflowParams.getTaskToDomain();
+        if (taskToDomain != null) {
+            params.put("taskToDomain", taskToDomain);
         }
         return parametersUtils.getTaskInputV2(params, workflowInstance, null, null);
     }
